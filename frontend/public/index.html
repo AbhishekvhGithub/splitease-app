@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SplitEase — Split expenses effortlessly</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F7F6F2;
+      --surface: #FFFFFF;
+      --surface2: #F0EEE8;
+      --border: #E2DFD8;
+      --text: #1A1916;
+      --text-muted: #7A776E;
+      --accent: #2D6A4F;
+      --accent-light: #D8EDDF;
+      --accent-text: #1B4332;
+      --danger: #C0392B;
+      --danger-light: #FDECEA;
+      --warning: #B7791F;
+      --warning-light: #FEF3C7;
+      --info: #1E5799;
+      --info-light: #DBEAFE;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+      --transition: 0.18s ease;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 16px;
+    }
+
+    .header-actions { display: flex; gap: 8px; }
+
+    main { flex: 1; padding: 28px 24px; max-width: 960px; margin: 0 auto; width: 100%; }
+
+    /* ── Buttons ──────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: var(--accent-text); border-color: var(--accent-text); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-outline:hover { background: var(--surface2); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border-color: transparent;
+    }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+    .btn-danger:hover { background: var(--danger-light); }
+
+    .btn-danger-sm {
+      background: transparent;
+      color: var(--danger);
+      border-color: transparent;
+      padding: 6px 10px;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+    .btn-danger-sm:hover { background: var(--danger-light); }
+
+    .btn-sm { padding: 5px 10px; font-size: 13px; }
+    .btn-lg { padding: 11px 22px; font-size: 15px; }
+
+    /* ── Cards ────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-hover {
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+    .card-hover:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    /* ── Forms ────────────────────────────────────────── */
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color var(--transition);
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,106,79,0.1); }
+
+    select.form-control { cursor: pointer; }
+
+    /* ── Checkbox list ────────────────────────────────── */
+    .checkbox-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .checkbox-item:hover { background: var(--surface2); }
+    .checkbox-item.checked {
+      background: var(--accent-light);
+      border-color: var(--accent);
+    }
+
+    .checkbox-item input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+
+    /* ── Badges ───────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-green { background: var(--accent-light); color: var(--accent-text); }
+    .badge-red   { background: var(--danger-light); color: var(--danger); }
+    .badge-gray  { background: var(--surface2); color: var(--text-muted); }
+    .badge-blue  { background: var(--info-light); color: var(--info); }
+
+    /* ── Page Sections ────────────────────────────────── */
+    .page { display: none; animation: fadeIn 0.2s ease; }
+    .page.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Page Headers ─────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+
+    .page-title { font-size: 22px; font-weight: 600; }
+    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--text-muted);
+      cursor: pointer; padding: 4px 0;
+      border: none; background: none;
+      font-family: var(--font);
+      transition: color var(--transition);
+    }
+    .back-btn:hover { color: var(--text); }
+
+    /* ── Home Page ────────────────────────────────────── */
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .group-card .group-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .group-card .group-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; }
+    .group-card .group-stats {
+      display: flex; gap: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .group-card .stat { font-size: 12px; color: var(--text-muted); }
+    .group-card .stat strong { display: block; font-size: 16px; color: var(--text); font-weight: 600; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+
+    /* ── Tabs ─────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all var(--transition);
+      margin-bottom: -1px;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Expense List ─────────────────────────────────── */
+    .expense-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .expense-item:last-child { border-bottom: none; }
+
+    .expense-icon {
+      width: 38px; height: 38px;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .expense-details { flex: 1; min-width: 0; }
+    .expense-name { font-weight: 500; font-size: 14px; }
+    .expense-meta { font-size: 12px; color: var(--text-muted); }
+    .expense-amount { font-size: 15px; font-weight: 600; font-family: var(--mono); }
+    .expense-split { font-size: 12px; color: var(--text-muted); text-align: right; }
+
+    /* ── Balance cards ────────────────────────────────── */
+    .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+    .balance-card {
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid;
+    }
+    .balance-card.positive { background: var(--accent-light); border-color: #A8D5B5; }
+    .balance-card.negative { background: var(--danger-light); border-color: #F5B7B1; }
+    .balance-card .bc-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .balance-card .bc-amount { font-size: 22px; font-weight: 600; font-family: var(--mono); }
+
+    /* ── Transaction list ─────────────────────────────── */
+    .transaction-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+    }
+
+    .transaction-arrow { font-size: 18px; color: var(--text-muted); }
+    .transaction-names { flex: 1; }
+    .transaction-names .from { font-weight: 500; }
+    .transaction-names .to { font-size: 13px; color: var(--text-muted); }
+    .transaction-amount { font-weight: 600; font-family: var(--mono); color: var(--danger); }
+
+    /* ── Modal ────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; padding-top: 60px; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: var(--shadow-md);
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .modal-title { font-size: 18px; font-weight: 600; }
+    .modal-close {
+      width: 28px; height: 28px;
+      border: none; background: var(--surface2);
+      border-radius: 50%; cursor: pointer;
+      font-size: 16px; color: var(--text-muted);
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+    }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+
+    .modal-footer {
+      display: flex; gap: 10px; justify-content: flex-end;
+      margin-top: 24px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Toast ────────────────────────────────────────── */
+    .toast-container {
+      position: fixed; bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 8px;
+      z-index: 300;
+    }
+
+    .toast {
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: var(--shadow-md);
+      animation: toastIn 0.25s ease;
+      display: flex; align-items: center; gap: 8px;
+      min-width: 240px;
+    }
+    .toast.success { background: var(--accent); color: white; }
+    .toast.error   { background: var(--danger); color: white; }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Avatar ───────────────────────────────────────── */
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent-text);
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .avatar-list { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ── Members chips ────────────────────────────────── */
+    .member-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    /* ── Divider ──────────────────────────────────────── */
+    .divider {
+      height: 1px; background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Amount split preview ─────────────────────────── */
+    .split-preview {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    .split-preview strong { color: var(--text); }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 600px) {
+      main { padding: 20px 16px; }
+      .balance-grid { grid-template-columns: 1fr; }
+      .groups-grid { grid-template-columns: 1fr; }
+      header { padding: 0 16px; }
+    }
+
+    /* ── Loading spinner ──────────────────────────────── */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-state { text-align: center; padding: 40px; color: var(--text-muted); }
+
+    /* ── Section header ───────────────────────────────── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title { font-size: 15px; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <header>
+    <a class="logo" onclick="showPage('home')">
+      <div class="logo-icon">$</div>
+      SplitEase
+    </a>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" onclick="openModal('modal-add-user')">+ Add Friend</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ══════════════════════════════════════════════════
+         HOME PAGE — list of groups
+    ══════════════════════════════════════════════════ -->
+    <div id="page-home" class="page active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Your Groups</div>
+          <div class="page-subtitle">Track shared expenses with friends</div>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateGroupModal()">
+          + New Group
+        </button>
+      </div>
+
+      <div id="groups-list">
+        <div class="loading-state"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════
+         GROUP DETAIL PAGE
+    ══════════════════════════════════════════════════ -->
+    <div id="page-group" class="page">
+      <button class="back-btn" onclick="showPage('home')">← Back to groups</button>
+
+      <div class="page-header" style="margin-top: 12px;">
+        <div>
+          <div class="page-title" id="group-detail-name">Group</div>
+          <div id="group-detail-members" style="margin-top: 8px;"></div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-add-expense')">
+          + Add Expense
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('expenses')">Expenses</button>
+        <button class="tab-btn" onclick="switchTab('balances')">Balances</button>
+      </div>
+
+      <!-- Tab: Expenses -->
+      <div id="tab-expenses" class="tab-panel active">
+        <div id="expenses-list">
+          <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- Tab: Balances -->
+      <div id="tab-balances" class="tab-panel">
+        <div id="balances-content">
+          <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════ -->
+
+<!-- Add Friend Modal -->
+<div id="modal-add-user" class="modal-overlay" onclick="handleOverlayClick(event, 'modal-add-user')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Friend</div>
+      <button class="modal-close" onclick="closeModal('modal-add-user')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input id="user-name-input" class="form-control" type="text" placeholder="e.g. Alex Johnson" maxlength="50" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-user')">Cancel</button>
+      <button class="btn btn-primary" onclick="addUser()">Add Friend</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Group Modal -->
+<div id="modal-create-group" class="modal-overlay" onclick="handleOverlayClick(event, 'modal-create-group')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Create Group</div>
+      <button class="modal-close" onclick="closeModal('modal-create-group')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Group Name</label>
+      <input id="group-name-input" class="form-control" type="text" placeholder="e.g. Goa Trip, Flatmates" maxlength="60" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description (optional)</label>
+      <input id="group-desc-input" class="form-control" type="text" placeholder="What's this group for?" maxlength="100" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Select Members (choose 1+)</label>
+      <div id="group-member-select" class="checkbox-list">
+        <div class="loading-state"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-create-group')">Cancel</button>
+      <button class="btn btn-primary" onclick="createGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div id="modal-add-expense" class="modal-overlay" onclick="handleOverlayClick(event, 'modal-add-expense')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Expense</div>
+      <button class="modal-close" onclick="closeModal('modal-add-expense')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input id="expense-desc-input" class="form-control" type="text" placeholder="e.g. Dinner, Taxi, Groceries" maxlength="80" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Amount (₹)</label>
+      <input id="expense-amount-input" class="form-control" type="number" placeholder="0.00" min="0.01" step="0.01" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Paid by</label>
+      <select id="expense-paidby-select" class="form-control">
+        <option value="">Select who paid...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Split among</label>
+      <div id="expense-split-select" class="checkbox-list"></div>
+      <div id="split-preview" class="split-preview" style="display:none;"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-expense')">Cancel</button>
+      <button class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STATE & CONFIG
+// ══════════════════════════════════════════════════════
+// Support both development and production API endpoints
+// In production (Vercel): use full URL to Render backend
+// In development: use localhost
+const API = (() => {
+  const hostname = window.location.hostname;
+  // If running on Vercel or any non-localhost domain, construct API URL
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    // Get the backend URL from window variable (set by environment)
+    return window.REACT_APP_API_URL || `https://splitease-app-rkgp.onrender.com/api`;
+  }
+  // Local development
+  return 'http://localhost:3001/api';
+})();
+let currentGroupId = null;
+let currentGroupMembers = [];
+let allUsers = [];
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  loadGroups();
+  loadUsers();
+  
+  // Add event listeners for delete buttons
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('delete-group-btn')) {
+      e.stopPropagation();
+      const groupId = e.target.dataset.groupId;
+      const groupName = e.target.dataset.groupName;
+      deleteGroup(groupId, groupName);
+    }
+  });
+});
+
+// ══════════════════════════════════════════════════════
+//  PAGE NAVIGATION
+// ══════════════════════════════════════════════════════
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+  event.target.classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+
+  if (tab === 'balances' && currentGroupId) {
+    loadBalances(currentGroupId);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  MODAL HELPERS
+// ══════════════════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  // Focus first input
+  setTimeout(() => {
+    const input = document.querySelector(`#${id} input`);
+    if (input) input.focus();
+  }, 100);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // Clear inputs
+  document.querySelectorAll(`#${id} input`).forEach(i => i.value = '');
+  document.querySelectorAll(`#${id} select`).forEach(s => s.selectedIndex = 0);
+  document.querySelectorAll(`#${id} .checked`).forEach(el => el.classList.remove('checked'));
+  document.querySelectorAll(`#${id} input[type="checkbox"]`).forEach(cb => cb.checked = false);
+}
+
+function handleOverlayClick(event, id) {
+  if (event.target === document.getElementById(id)) closeModal(id);
+}
+
+// ══════════════════════════════════════════════════════
+//  TOAST NOTIFICATIONS
+// ══════════════════════════════════════════════════════
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// ══════════════════════════════════════════════════════
+//  API HELPERS
+// ══════════════════════════════════════════════════════
+async function apiFetch(url, options = {}) {
+  const response = await fetch(API + url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  });
+
+  const text = await response.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (err) {
+    throw new Error(`Request failed (${response.status}): ${text}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.error || `Request failed (${response.status}): ${text}`);
+  }
+
+  return data;
+}
+
+// ══════════════════════════════════════════════════════
+//  USERS
+// ══════════════════════════════════════════════════════
+async function loadUsers() {
+  try {
+    allUsers = await apiFetch('/users');
+  } catch (err) {
+    console.error('Failed to load users:', err);
+  }
+}
+
+async function addUser() {
+  const name = document.getElementById('user-name-input').value.trim();
+  if (!name) return showToast('Please enter a name', 'error');
+
+  try {
+    const user = await apiFetch('/users', {
+      method: 'POST',
+      body: JSON.stringify({ name })
+    });
+    allUsers.push(user);
+    closeModal('modal-add-user');
+    showToast(`${user.name} added!`);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Get initials from name (e.g. "Alice" → "AL", "Bob Smith" → "BS")
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+// ══════════════════════════════════════════════════════
+//  GROUPS
+// ══════════════════════════════════════════════════════
+async function loadGroups() {
+  const container = document.getElementById('groups-list');
+  try {
+    const groups = await apiFetch('/groups');
+
+    if (groups.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">👥</div>
+          <h3>No groups yet</h3>
+          <p>Create a group to start splitting expenses with friends.</p>
+          <br>
+          <button class="btn btn-primary" onclick="openCreateGroupModal()">Create your first group</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="groups-grid">${groups.map(renderGroupCard).join('')}</div>`;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p>Failed to load groups. Is the backend running?</p></div>`;
+  }
+}
+
+function renderGroupCard(group) {
+  return `
+    <div class="card card-hover group-card" onclick="openGroup(${group.id})">
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div style="flex:1;">
+          <div class="group-name">${escHtml(group.name)}</div>
+          <div class="group-meta">${escHtml(group.description || 'No description')}</div>
+        </div>
+        <button class="btn btn-danger-sm delete-group-btn" data-group-id="${group.id}" data-group-name="${group.name.replace(/"/g, '&quot;')}" title="Delete group" style="margin-left:8px;">✕</button>
+      </div>
+      <div class="group-stats">
+        <div class="stat">
+          <strong>${group.member_count}</strong>
+          Members
+        </div>
+        <div class="stat">
+          <strong>${group.expense_count}</strong>
+          Expenses
+        </div>
+        <div class="stat">
+          <strong>₹${Number(group.total_amount).toLocaleString('en-IN')}</strong>
+          Total
+        </div>
+      </div>
+    </div>`;
+}
+
+async function deleteGroup(groupId, groupName) {
+  if (!confirm(`Delete group "${groupName}"? This will remove all expenses in this group.`)) return;
+  
+  try {
+    await apiFetch(`/groups/${groupId}`, { method: 'DELETE' });
+    showToast(`Group "${groupName}" deleted!`);
+    loadGroups();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Open modal and populate member checkboxes
+async function openCreateGroupModal() {
+  openModal('modal-create-group');
+  const container = document.getElementById('group-member-select');
+  container.innerHTML = `<div class="loading-state"><div class="spinner"></div></div>`;
+
+  try {
+    await loadUsers();
+  } catch (err) {
+    container.innerHTML = `<div style="color:var(--text-muted); font-size:14px; padding: 8px;">
+      Failed to load friends.
+    </div>`;
+    return;
+  }
+
+  if (allUsers.length === 0) {
+    container.innerHTML = `<div style="color:var(--text-muted); font-size:14px; padding: 8px;">
+      No friends added yet.
+      <a href="#" onclick="closeModal('modal-create-group'); openModal('modal-add-user');" style="color:var(--accent)">Add friends first →</a>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = allUsers.map(u => `
+    <label class="checkbox-item" id="gm-${u.id}">
+      <input type="checkbox" value="${u.id}" onchange="toggleCheckbox('gm-${u.id}', this.checked)">
+      <div class="avatar">${getInitials(u.name)}</div>
+      <span>${escHtml(u.name)}</span>
+    </label>`).join('');
+}
+
+async function createGroup() {
+  const name = document.getElementById('group-name-input').value.trim();
+  const description = document.getElementById('group-desc-input').value.trim();
+  const memberIds = [...document.querySelectorAll('#group-member-select input:checked')].map(cb => parseInt(cb.value));
+
+  if (!name) return showToast('Please enter a group name', 'error');
+  if (memberIds.length < 1) return showToast('Select at least one member', 'error');
+
+  try {
+    await apiFetch('/groups', {
+      method: 'POST',
+      body: JSON.stringify({ name, description, memberIds })
+    });
+    closeModal('modal-create-group');
+    showToast(`Group "${name}" created!`);
+    loadGroups();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  GROUP DETAIL
+// ══════════════════════════════════════════════════════
+async function openGroup(groupId) {
+  currentGroupId = groupId;
+  showPage('group');
+
+  // Reset to expenses tab
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  document.getElementById('tab-expenses').classList.add('active');
+  document.getElementById('tab-balances').classList.remove('active');
+
+  try {
+    const group = await apiFetch(`/groups/${groupId}`);
+    currentGroupMembers = group.members;
+
+    document.getElementById('group-detail-name').textContent = group.name;
+    document.getElementById('group-detail-members').innerHTML =
+      `<div class="avatar-list">${group.members.map(m =>
+        `<div class="member-chip"><div class="avatar" style="width:22px;height:22px;font-size:10px;">${getInitials(m.name)}</div>${escHtml(m.name)}</div>`
+      ).join('')}</div>`;
+
+    loadExpenses(groupId);
+  } catch (err) {
+    showToast('Failed to load group', 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  EXPENSES
+// ══════════════════════════════════════════════════════
+async function loadExpenses(groupId) {
+  const container = document.getElementById('expenses-list');
+  container.innerHTML = `<div class="loading-state"><div class="spinner"></div></div>`;
+
+  try {
+    const expenses = await apiFetch(`/groups/${groupId}/expenses`);
+
+    if (expenses.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🧾</div>
+          <h3>No expenses yet</h3>
+          <p>Add your first expense to start tracking.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="card" style="padding: 0 20px;">
+      ${expenses.map(renderExpenseItem).join('')}
+    </div>`;
+  } catch (err) {
+    container.innerHTML = `<p style="color:var(--danger)">Failed to load expenses.</p>`;
+  }
+}
+
+// Pick an emoji based on description keyword
+function expenseEmoji(desc) {
+  const d = desc.toLowerCase();
+  if (d.includes('food') || d.includes('dinner') || d.includes('lunch') || d.includes('eat') || d.includes('restaurant')) return '🍽️';
+  if (d.includes('taxi') || d.includes('uber') || d.includes('cab') || d.includes('transport') || d.includes('auto')) return '🚕';
+  if (d.includes('hotel') || d.includes('hostel') || d.includes('stay') || d.includes('accommodation')) return '🏨';
+  if (d.includes('grocery') || d.includes('groceries') || d.includes('supermarket')) return '🛒';
+  if (d.includes('drink') || d.includes('beer') || d.includes('bar') || d.includes('party')) return '🍺';
+  if (d.includes('flight') || d.includes('air') || d.includes('ticket')) return '✈️';
+  if (d.includes('movie') || d.includes('cinema') || d.includes('show')) return '🎬';
+  return '💳';
+}
+
+function renderExpenseItem(expense) {
+  const perPersonAmt = expense.splits[0]?.share || 0;
+  const splitCount = expense.splits.length;
+
+  return `
+    <div class="expense-item">
+      <div class="expense-icon">${expenseEmoji(expense.description)}</div>
+      <div class="expense-details">
+        <div class="expense-name">${escHtml(expense.description)}</div>
+        <div class="expense-meta">
+          Paid by <strong>${escHtml(expense.paid_by_name)}</strong> ·
+          ${new Date(expense.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="expense-amount">₹${Number(expense.amount).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div class="expense-split">₹${Number(perPersonAmt).toFixed(2)}/person × ${splitCount}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="deleteExpense(${expense.id})" title="Delete" style="color:var(--text-muted); padding: 6px 8px;">✕</button>
+    </div>`;
+}
+
+function openAddExpenseModal() {
+  openModal('modal-add-expense');
+
+  // Populate "paid by" dropdown with group members
+  const select = document.getElementById('expense-paidby-select');
+  select.innerHTML = `<option value="">Select who paid...</option>` +
+    currentGroupMembers.map(m => `<option value="${m.id}">${escHtml(m.name)}</option>`).join('');
+
+  // Populate split-among checkboxes
+  const splitContainer = document.getElementById('expense-split-select');
+  splitContainer.innerHTML = currentGroupMembers.map(m => `
+    <label class="checkbox-item checked" id="es-${m.id}">
+      <input type="checkbox" value="${m.id}" checked onchange="toggleCheckbox('es-${m.id}', this.checked); updateSplitPreview();">
+      <div class="avatar" style="width:26px;height:26px;font-size:11px;">${getInitials(m.name)}</div>
+      <span>${escHtml(m.name)}</span>
+    </label>`).join('');
+
+  // Update preview on amount change
+  document.getElementById('expense-amount-input').addEventListener('input', updateSplitPreview);
+  updateSplitPreview();
+}
+
+function updateSplitPreview() {
+  const amount = parseFloat(document.getElementById('expense-amount-input').value) || 0;
+  const checked = document.querySelectorAll('#expense-split-select input:checked');
+  const preview = document.getElementById('split-preview');
+
+  if (amount > 0 && checked.length > 0) {
+    const share = (amount / checked.length).toFixed(2);
+    preview.style.display = 'block';
+    preview.innerHTML = `₹${amount.toFixed(2)} ÷ ${checked.length} people = <strong>₹${share} each</strong>`;
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function addExpense() {
+  console.log('addExpense called, currentGroupId:', currentGroupId);
+  const description = document.getElementById('expense-desc-input').value.trim();
+  const amount = parseFloat(document.getElementById('expense-amount-input').value);
+  const paidBy = parseInt(document.getElementById('expense-paidby-select').value);
+  const splitAmong = [...document.querySelectorAll('#expense-split-select input:checked')].map(cb => parseInt(cb.value));
+
+  console.log('Form data:', { description, amount, paidBy, splitAmong });
+
+  if (!description) return showToast('Please enter a description', 'error');
+  if (!amount || amount <= 0) return showToast('Please enter a valid amount', 'error');
+  if (!paidBy) return showToast('Please select who paid', 'error');
+  if (splitAmong.length === 0) return showToast('Select at least one person to split with', 'error');
+
+  try {
+    console.log('Making API call to:', `/groups/${currentGroupId}/expenses`);
+    await apiFetch(`/groups/${currentGroupId}/expenses`, {
+      method: 'POST',
+      body: JSON.stringify({ description, amount, paidBy, splitAmong })
+    });
+    closeModal('modal-add-expense');
+    showToast('Expense added!');
+    loadExpenses(currentGroupId);
+    loadGroups(); // Refresh total in group card
+  } catch (err) {
+    console.error('Add expense error:', err);
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteExpense(expenseId) {
+  if (!confirm('Delete this expense?')) return;
+  try {
+    await apiFetch(`/expenses/${expenseId}`, { method: 'DELETE' });
+    showToast('Expense deleted');
+    loadExpenses(currentGroupId);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  BALANCES
+// ══════════════════════════════════════════════════════
+async function loadBalances(groupId) {
+  const container = document.getElementById('balances-content');
+  container.innerHTML = `<div class="loading-state"><div class="spinner"></div></div>`;
+
+  try {
+    const data = await apiFetch(`/groups/${groupId}/balances`);
+    container.innerHTML = renderBalances(data);
+  } catch (err) {
+    container.innerHTML = `<p style="color:var(--danger)">Failed to load balances.</p>`;
+  }
+}
+
+function renderBalances({ netBalances, transactions }) {
+  if (netBalances.length === 0) {
+    return `<div class="empty-state"><div class="empty-icon">⚖️</div><h3>No balances</h3><p>Add expenses to see who owes whom.</p></div>`;
+  }
+
+  const settled = transactions.length === 0;
+
+  const balanceCardsHtml = netBalances
+    .filter(b => Math.abs(b.balance) > 0.01)
+    .sort((a, b) => b.balance - a.balance)
+    .map(b => {
+      const isPositive = b.balance > 0;
+      return `
+        <div class="balance-card ${isPositive ? 'positive' : 'negative'}">
+          <div class="bc-name">${escHtml(b.name)}</div>
+          <div class="bc-amount" style="color: ${isPositive ? 'var(--accent)' : 'var(--danger)'}">
+            ${isPositive ? '+' : ''}₹${Math.abs(b.balance).toFixed(2)}
+          </div>
+          <div style="font-size:12px; color: ${isPositive ? 'var(--accent-text)' : 'var(--danger)'}; margin-top:2px;">
+            ${isPositive ? 'is owed' : 'owes'}
+          </div>
+        </div>`;
+    }).join('');
+
+  const transactionsHtml = settled
+    ? `<div class="empty-state" style="padding: 24px; background: var(--accent-light); border-radius: var(--radius); text-align:center;">
+         <div style="font-size:24px; margin-bottom:8px;">🎉</div>
+         <strong>All settled up!</strong>
+         <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">Everyone's even.</p>
+       </div>`
+    : transactions.map(t => `
+        <div class="transaction-item">
+          <div class="avatar">${getInitials(t.fromName)}</div>
+          <div class="transaction-names">
+            <div class="from">${escHtml(t.fromName)}</div>
+            <div class="to">pays ${escHtml(t.toName)}</div>
+          </div>
+          <div class="transaction-arrow">→</div>
+          <div class="transaction-amount">₹${t.amount.toFixed(2)}</div>
+        </div>`).join('');
+
+  return `
+    <div class="section-header"><div class="section-title">Net balances</div></div>
+    <div class="balance-grid" style="margin-bottom:24px;">${balanceCardsHtml}</div>
+    <div class="divider"></div>
+    <div class="section-header"><div class="section-title">Suggested settlements</div></div>
+    ${transactionsHtml}`;
+}
+
+// ══════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════
+function toggleCheckbox(wrapperId, checked) {
+  document.getElementById(wrapperId)?.classList.toggle('checked', checked);
+}
+
+// Escape HTML to prevent XSS
+function escHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(str || ''));
+  return div.innerHTML;
+}
+
+// Make buttons that open modals work
+document.querySelector('[onclick="openModal(\'modal-create-group\')"]')?.setAttribute('onclick', 'openCreateGroupModal()');
+document.querySelectorAll('[onclick="openModal(\'modal-create-group\')"]').forEach(el => {
+  el.setAttribute('onclick', 'openCreateGroupModal()');
+});
+document.querySelectorAll('[onclick="openModal(\'modal-add-expense\')"]').forEach(el => {
+  console.log('Updating add expense button:', el);
+  el.setAttribute('onclick', 'openAddExpenseModal()');
+});
+</script>
+</body>
+</html>
