@@ -1,0 +1,17 @@
+{
+  "name": "splitease",
+  "version": "1.0.0",
+  "description": "A Splitwise-like expense splitting app",
+  "main": "backend/server.js",
+  "scripts": {
+    "install": "cd backend && npm install",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev",
+    "build": "echo 'No build step required'",
+    "docker:build": "docker build -t splitease .",
+    "docker:run": "docker run -p 3001:3001 splitease"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
