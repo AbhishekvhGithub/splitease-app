@@ -1,9 +1,8 @@
 {
-  "buildCommand": "echo 'Frontend build complete'",
-  "installCommand": "echo 'No dependencies to install'",
-  "buildOutputDirectory": "frontend/public",
+  "buildCommand": "echo 'Frontend is ready'",
+  "installCommand": "echo 'No build needed'",
   "public": true,
   "env": {
-    "REACT_APP_API_URL": "@api_url"
+    "REACT_APP_API_URL": "https://splitease-app-rkgp.onrender.com/api"
   }
 }
