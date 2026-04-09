@@ -2,6 +2,11 @@
 
 A full-stack expense splitting application like Splitwise, built with Node.js, Express, SQLite, and vanilla JavaScript.
 
+## 🌐 Live Deployments
+
+- **Frontend**: [splitease-app-one.vercel.app](https://splitease-app-one.vercel.app)
+- **Backend API**: [splitease-app-rkgp.onrender.com](https://splitease-app-rkgp.onrender.com)
+
 ---
 
 ## 📁 Folder Structure
