@@ -10,6 +10,6 @@
     "install": "npm install --prefix backend",
     "start": "node backend/server.js",
     "dev": "cd backend && npm run dev",
-    "build": "echo 'Build complete'"
+    "build": "node -e \"require('fs').cpSync('frontend/public', 'public', { recursive: true })\""
   }
 }
