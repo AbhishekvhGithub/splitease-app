@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: splitease-app
+    root: .
+    runtime: node
+    buildCommand: npm run install && npm run build
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_PATH
+        value: /opt/render/project/frontend/public
