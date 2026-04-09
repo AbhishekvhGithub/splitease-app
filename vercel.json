@@ -1,15 +1,9 @@
 {
   "buildCommand": "echo 'Frontend build complete'",
   "installCommand": "echo 'No dependencies to install'",
-  "framework": "static",
-  "public": "frontend/public",
+  "buildOutputDirectory": "frontend/public",
+  "public": true,
   "env": {
     "REACT_APP_API_URL": "@api_url"
-  },
-  "routes": [
-    {
-      "src": "^/(?!api).*",
-      "dest": "frontend/public/index.html"
-    }
-  ]
+  }
 }
