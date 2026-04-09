@@ -80,6 +80,8 @@ dist
 # Gatsby files
 .cache/
 public
+!public/
+!public/**
 !frontend/public/
 !frontend/public/**
 
