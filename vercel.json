@@ -1,5 +1,4 @@
 {
   "version": 3,
-  "buildCommand": "mkdir -p public && cp -R frontend/public/* public/",
-  "outputDirectory": "public"
+  "outputDirectory": "frontend/public"
 }
