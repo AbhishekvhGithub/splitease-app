@@ -10,6 +10,9 @@ import { calculateBalances } from './balanceCalculator.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Get the project root directory (parent of backend directory)
+const projectRoot = path.resolve(__dirname, '..');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -18,7 +21,7 @@ app.use(cors());                          // Allow frontend to call backend
 app.use(express.json());                  // Parse JSON request bodies
 
 // Serve static frontend files from the frontend/public folder
-app.use(express.static(path.join(__dirname, '../frontend/public')));
+app.use(express.static(path.join(projectRoot, 'frontend/public')));
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -329,7 +332,7 @@ app.get('/api/groups/:id/balances', (req, res) => {
 
 // ─── Catch-all: serve frontend for any unmatched route ─────────
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/public/index.html'));
+  res.sendFile(path.join(projectRoot, 'frontend/public/index.html'));
 });
 
 
