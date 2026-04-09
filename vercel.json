@@ -1,8 +1,19 @@
 {
-  "buildCommand": "echo 'Frontend is ready'",
-  "installCommand": "echo 'No build needed'",
-  "public": true,
-  "env": {
-    "REACT_APP_API_URL": "https://splitease-app-rkgp.onrender.com/api"
-  }
+  "version": 3,
+  "builds": [
+    {
+      "src": "frontend/public/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/frontend/public/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/public/$1"
+    }
+  ]
 }
