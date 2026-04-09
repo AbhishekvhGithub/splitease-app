@@ -3,6 +3,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import db from './db.js';
 import { calculateBalances } from './balanceCalculator.js';
@@ -13,15 +14,35 @@ const __dirname = path.dirname(__filename);
 // Get the project root directory (parent of backend directory)
 const projectRoot = path.resolve(__dirname, '..');
 
-// Allow frontend path to be overridden via environment variable
-// Useful for deployments with non-standard directory structures
-const frontendPath = process.env.FRONTEND_PATH || path.join(projectRoot, 'frontend', 'public');
+function resolveFrontendPaths() {
+  const candidatePaths = [
+    path.join(projectRoot, 'frontend', 'public'),
+    path.join(process.cwd(), 'frontend', 'public'),
+    path.join(projectRoot, 'public'),
+    path.join(process.cwd(), 'public')
+  ];
+
+  const uniquePaths = [...new Set(candidatePaths)];
+  const validPaths = uniquePaths.filter((candidate) => fs.existsSync(path.join(candidate, 'index.html')));
+
+  if (validPaths.length > 0) return validPaths;
+
+  console.warn('⚠️ No valid frontend path found from candidates:');
+  for (const candidate of uniquePaths) {
+    console.warn(`   - ${candidate} (index.html exists: ${fs.existsSync(path.join(candidate, 'index.html'))})`);
+  }
+  return uniquePaths;
+}
+
+const frontendPaths = resolveFrontendPaths();
+const frontendPath = frontendPaths[0];
 
 // Log paths for debugging deployment issues
 console.log(`📁 Current working directory: ${process.cwd()}`);
 console.log(`📁 __dirname (backend): ${__dirname}`);
 console.log(`📁 projectRoot: ${projectRoot}`);
 console.log(`📁 Frontend static files: ${frontendPath}`);
+console.log(`📁 Frontend path candidates: ${frontendPaths.join(', ')}`);
 console.log(`📁 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 
 const app = express();
@@ -31,8 +52,15 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());                          // Allow frontend to call backend
 app.use(express.json());                  // Parse JSON request bodies
 
-// Serve static frontend files from the frontend/public folder
-app.use(express.static(frontendPath));
+// Lightweight health endpoint for platform health checks
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Serve static frontend files from every valid candidate directory
+for (const staticPath of frontendPaths) {
+  app.use(express.static(staticPath));
+}
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -343,7 +371,19 @@ app.get('/api/groups/:id/balances', (req, res) => {
 
 // ─── Catch-all: serve frontend for any unmatched route ─────────
 app.get('*', (req, res, next) => {
-  const indexPath = path.join(frontendPath, 'index.html');
+  const indexPath = frontendPaths
+    .map((p) => path.join(p, 'index.html'))
+    .find((candidate) => fs.existsSync(candidate));
+
+  if (!indexPath) {
+    console.error('❌ Error serving frontend: no index.html found in any frontend path');
+    return res.status(404).json({
+      error: 'Frontend files not found',
+      attemptedPaths: frontendPaths,
+      workingDir: process.cwd()
+    });
+  }
+
   console.log(`🔍 Serving index.html from: ${indexPath}`);
   
   res.sendFile(indexPath, (err) => {
