@@ -13,6 +13,17 @@ const __dirname = path.dirname(__filename);
 // Get the project root directory (parent of backend directory)
 const projectRoot = path.resolve(__dirname, '..');
 
+// Allow frontend path to be overridden via environment variable
+// Useful for deployments with non-standard directory structures
+const frontendPath = process.env.FRONTEND_PATH || path.join(projectRoot, 'frontend', 'public');
+
+// Log paths for debugging deployment issues
+console.log(`📁 Current working directory: ${process.cwd()}`);
+console.log(`📁 __dirname (backend): ${__dirname}`);
+console.log(`📁 projectRoot: ${projectRoot}`);
+console.log(`📁 Frontend static files: ${frontendPath}`);
+console.log(`📁 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -21,7 +32,7 @@ app.use(cors());                          // Allow frontend to call backend
 app.use(express.json());                  // Parse JSON request bodies
 
 // Serve static frontend files from the frontend/public folder
-app.use(express.static(path.join(projectRoot, 'frontend/public')));
+app.use(express.static(frontendPath));
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -331,8 +342,21 @@ app.get('/api/groups/:id/balances', (req, res) => {
 
 
 // ─── Catch-all: serve frontend for any unmatched route ─────────
-app.get('*', (req, res) => {
-  res.sendFile(path.join(projectRoot, 'frontend/public/index.html'));
+app.get('*', (req, res, next) => {
+  const indexPath = path.join(frontendPath, 'index.html');
+  console.log(`🔍 Serving index.html from: ${indexPath}`);
+  
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error(`❌ Error serving frontend: ${err.message}`);
+      console.error(`   Attempted path: ${indexPath}`);
+      res.status(404).json({ 
+        error: 'Frontend files not found',
+        attemptedPath: indexPath,
+        workingDir: process.cwd()
+      });
+    }
+  });
 });
 
 
