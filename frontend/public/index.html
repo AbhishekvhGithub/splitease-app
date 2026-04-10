@@ -570,10 +570,23 @@
         </div>
       </div>
 
+      <div id="group-member-admin-panel" class="card" style="padding: 14px 16px; margin-top: 12px;">
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Manage members and admin</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <select id="group-add-member-select" class="form-control" style="max-width:280px;">
+            <option value="">Add member...</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="addMemberToCurrentGroup()">Add Member</button>
+        </div>
+        <div id="group-member-manage-list" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('expenses')">Expenses</button>
         <button class="tab-btn" onclick="switchTab('balances')">Balances</button>
+        <button class="tab-btn" onclick="switchTab('chat')">Chat</button>
+        <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
       </div>
 
       <!-- Tab: Expenses -->
@@ -587,6 +600,30 @@
       <div id="tab-balances" class="tab-panel">
         <div id="balances-content">
           <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <div id="tab-chat" class="tab-panel">
+        <div class="card" style="padding:16px;">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+            <select id="chat-sender-select" class="form-control" style="max-width:220px;"></select>
+            <button class="btn btn-outline btn-sm" onclick="loadMessages(currentGroupId)">Refresh</button>
+          </div>
+          <div id="chat-list" style="max-height:260px; overflow:auto; border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:var(--bg);"></div>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <input id="chat-message-input" class="form-control" type="text" placeholder="Write a message about expenses..." maxlength="250" />
+            <button class="btn btn-primary btn-sm" onclick="sendGroupMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-reports" class="tab-panel">
+        <div class="card" style="padding:16px;">
+          <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Export current group report</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="downloadExcelReport()">Download Excel (CSV)</button>
+            <button class="btn btn-outline btn-sm" onclick="openPdfReport()">Open PDF report page</button>
+          </div>
         </div>
       </div>
     </div>
@@ -642,6 +679,13 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label class="form-label">Assign Admin</label>
+      <select id="group-admin-select" class="form-control">
+        <option value="">Select admin...</option>
+      </select>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-create-group')">Cancel</button>
       <button class="btn btn-primary" onclick="createGroup()">Create Group</button>
@@ -668,6 +712,18 @@
     </div>
 
     <div class="form-group">
+      <label class="form-label">Category</label>
+      <select id="expense-category-select" class="form-control">
+        <option value="food">Food</option>
+        <option value="rent">Rent</option>
+        <option value="travel">Travel</option>
+        <option value="utilities">Utilities</option>
+        <option value="shopping">Shopping</option>
+        <option value="other" selected>Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Paid by</label>
       <select id="expense-paidby-select" class="form-control">
         <option value="">Select who paid...</option>
@@ -675,9 +731,25 @@
     </div>
 
     <div class="form-group">
+      <label class="form-label">Split Type</label>
+      <select id="expense-splittype-select" class="form-control" onchange="onSplitTypeChange()">
+        <option value="equal" selected>Equal split</option>
+        <option value="unequal">Unequal split</option>
+        <option value="percentage">Percentage split</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="applyAutoSuggestion()" style="margin-top:8px;">Use auto suggestion</button>
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Split among</label>
       <div id="expense-split-select" class="checkbox-list"></div>
+      <div id="expense-custom-splits" style="display:none; margin-top:10px;"></div>
       <div id="split-preview" class="split-preview" style="display:none;"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes (optional)</label>
+      <input id="expense-notes-input" class="form-control" type="text" placeholder="Any extra details..." maxlength="140" />
     </div>
 
     <div class="modal-footer">
@@ -710,6 +782,7 @@ const API = (() => {
 let currentGroupId = null;
 let currentGroupMembers = [];
 let allUsers = [];
+let currentGroup = null;
 
 // ══════════════════════════════════════════════════════
 //  INIT
@@ -736,6 +809,9 @@ function switchTab(tab) {
 
   if (tab === 'balances' && currentGroupId) {
     loadBalances(currentGroupId);
+  }
+  if (tab === 'chat' && currentGroupId) {
+    loadMessages(currentGroupId);
   }
 }
 
@@ -887,7 +963,9 @@ function renderGroupCard(group) {
 async function openCreateGroupModal() {
   openModal('modal-create-group');
   const container = document.getElementById('group-member-select');
+  const adminSelect = document.getElementById('group-admin-select');
   container.innerHTML = `<div class="loading-state"><div class="spinner"></div></div>`;
+  adminSelect.innerHTML = `<option value="">Select admin...</option>`;
 
   try {
     await loadUsers();
@@ -912,20 +990,27 @@ async function openCreateGroupModal() {
       <div class="avatar">${getInitials(u.name)}</div>
       <span>${escHtml(u.name)}</span>
     </label>`).join('');
+
+  adminSelect.innerHTML = `
+    <option value="">Select admin...</option>
+    ${allUsers.map(u => `<option value="${u.id}">${escHtml(u.name)}</option>`).join('')}
+  `;
 }
 
 async function createGroup() {
   const name = document.getElementById('group-name-input').value.trim();
   const description = document.getElementById('group-desc-input').value.trim();
   const memberIds = [...document.querySelectorAll('#group-member-select input:checked')].map(cb => parseInt(cb.value));
+  const adminUserId = parseInt(document.getElementById('group-admin-select').value);
 
   if (!name) return showToast('Please enter a group name', 'error');
   if (memberIds.length < 1) return showToast('Select at least one member', 'error');
+  if (!adminUserId) return showToast('Please select an admin', 'error');
 
   try {
     await apiFetch('/groups', {
       method: 'POST',
-      body: JSON.stringify({ name, description, memberIds })
+      body: JSON.stringify({ name, description, memberIds, adminUserId })
     });
     closeModal('modal-create-group');
     showToast(`Group "${name}" created!`);
@@ -946,20 +1031,88 @@ async function openGroup(groupId) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
   document.getElementById('tab-expenses').classList.add('active');
   document.getElementById('tab-balances').classList.remove('active');
+  document.getElementById('tab-chat').classList.remove('active');
+  document.getElementById('tab-reports').classList.remove('active');
 
   try {
     const group = await apiFetch(`/groups/${groupId}`);
+    currentGroup = group;
     currentGroupMembers = group.members;
 
     document.getElementById('group-detail-name').textContent = group.name;
     document.getElementById('group-detail-members').innerHTML =
       `<div class="avatar-list">${group.members.map(m =>
-        `<div class="member-chip"><div class="avatar" style="width:22px;height:22px;font-size:10px;">${getInitials(m.name)}</div>${escHtml(m.name)}</div>`
+        `<div class="member-chip"><div class="avatar" style="width:22px;height:22px;font-size:10px;">${getInitials(m.name)}</div>${escHtml(m.name)}${m.is_admin === 1 ? ' (admin)' : ''}</div>`
       ).join('')}</div>`;
 
+    renderMemberManager();
+    setupChatSenderSelect();
     loadExpenses(groupId);
   } catch (err) {
     showToast('Failed to load group', 'error');
+  }
+}
+
+function setupChatSenderSelect() {
+  const sel = document.getElementById('chat-sender-select');
+  sel.innerHTML = currentGroupMembers.map((m) => `<option value="${m.id}">${escHtml(m.name)}</option>`).join('');
+}
+
+function renderMemberManager() {
+  const addSelect = document.getElementById('group-add-member-select');
+  const listContainer = document.getElementById('group-member-manage-list');
+  const memberIdSet = new Set(currentGroupMembers.map((m) => Number(m.id)));
+  const availableUsers = allUsers.filter((u) => !memberIdSet.has(Number(u.id)));
+
+  addSelect.innerHTML = `<option value="">Add member...</option>` +
+    availableUsers.map((u) => `<option value="${u.id}">${escHtml(u.name)}</option>`).join('');
+
+  listContainer.innerHTML = currentGroupMembers.map((m) => `
+    <span class="pill" style="display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:var(--bg); border:1px solid var(--border);">
+      <span>${escHtml(m.name)}${m.is_admin === 1 ? ' (admin)' : ''}</span>
+      ${m.is_admin === 1 ? '' : `<button class="btn btn-ghost btn-sm" onclick="setGroupAdmin(${m.id})" style="padding:2px 6px;">Make admin</button>`}
+      ${currentGroupMembers.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removeMemberFromCurrentGroup(${m.id})" style="padding:2px 6px; color:var(--danger);">Remove</button>` : ''}
+    </span>
+  `).join('');
+}
+
+async function addMemberToCurrentGroup() {
+  const userId = Number(document.getElementById('group-add-member-select').value);
+  if (!userId) return showToast('Select a user to add', 'error');
+  try {
+    await apiFetch(`/groups/${currentGroupId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ userId })
+    });
+    showToast('Member added successfully');
+    await openGroup(currentGroupId);
+    loadGroups();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function removeMemberFromCurrentGroup(userId) {
+  try {
+    await apiFetch(`/groups/${currentGroupId}/members/${userId}`, { method: 'DELETE' });
+    showToast('Member removed');
+    await openGroup(currentGroupId);
+    loadGroups();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function setGroupAdmin(userId) {
+  try {
+    await apiFetch(`/groups/${currentGroupId}/admin`, {
+      method: 'PATCH',
+      body: JSON.stringify({ userId })
+    });
+    showToast('Admin updated');
+    await openGroup(currentGroupId);
+  } catch (err) {
+    showToast(err.message, 'error');
   }
 }
 
@@ -1034,6 +1187,8 @@ function expenseEmoji(desc) {
 function renderExpenseItem(expense) {
   const perPersonAmt = expense.splits[0]?.share || 0;
   const splitCount = expense.splits.length;
+  const category = expense.category ? ` · ${escHtml(expense.category)}` : '';
+  const splitTypeLabel = expense.split_type ? ` · ${escHtml(expense.split_type)} split` : '';
 
   return `
     <div class="expense-item">
@@ -1042,7 +1197,7 @@ function renderExpenseItem(expense) {
         <div class="expense-name">${escHtml(expense.description)}</div>
         <div class="expense-meta">
           Paid by <strong>${escHtml(expense.paid_by_name)}</strong> ·
-          ${new Date(expense.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}
+          ${new Date(expense.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}${category}${splitTypeLabel}
         </div>
       </div>
       <div style="text-align:right">
@@ -1069,44 +1224,136 @@ function openAddExpenseModal() {
       <span>${escHtml(m.name)}</span>
     </label>`).join('');
 
+  document.getElementById('expense-category-select').value = 'other';
+  document.getElementById('expense-splittype-select').value = 'equal';
+  document.getElementById('expense-notes-input').value = '';
+  document.getElementById('expense-custom-splits').style.display = 'none';
+  document.getElementById('expense-custom-splits').innerHTML = '';
+
   // Update preview on amount change
-  document.getElementById('expense-amount-input').addEventListener('input', updateSplitPreview);
+  const amountInput = document.getElementById('expense-amount-input');
+  amountInput.removeEventListener('input', updateSplitPreview);
+  amountInput.addEventListener('input', updateSplitPreview);
+  updateSplitPreview();
+}
+
+async function applyAutoSuggestion() {
+  const paidBy = Number(document.getElementById('expense-paidby-select').value);
+  const category = document.getElementById('expense-category-select').value || 'other';
+  if (!paidBy) return showToast('Select "Paid by" first', 'error');
+  try {
+    const data = await apiFetch(`/groups/${currentGroupId}/suggestions?paidBy=${paidBy}&category=${encodeURIComponent(category)}`);
+    if (!data.found) return showToast('No suggestion yet for this payer/category');
+
+    document.getElementById('expense-splittype-select').value = data.splitType;
+    onSplitTypeChange();
+    if (data.splitType === 'equal') {
+      document.querySelectorAll('#expense-split-select input').forEach((cb) => {
+        const enabled = data.splitAmong.includes(Number(cb.value));
+        cb.checked = enabled;
+        toggleCheckbox(`es-${cb.value}`, enabled);
+      });
+    }
+    showToast(`Suggestion applied: ${data.splitType} split`);
+    updateSplitPreview();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function onSplitTypeChange() {
+  const splitType = document.getElementById('expense-splittype-select').value;
+  const custom = document.getElementById('expense-custom-splits');
+  if (splitType === 'equal') {
+    custom.style.display = 'none';
+    custom.innerHTML = '';
+    updateSplitPreview();
+    return;
+  }
+
+  custom.style.display = 'block';
+  custom.innerHTML = currentGroupMembers.map((m) => `
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <span style="min-width:120px; font-size:13px;">${escHtml(m.name)}</span>
+      <input
+        type="number"
+        class="form-control custom-split-input"
+        style="max-width:140px;"
+        data-user-id="${m.id}"
+        data-kind="${splitType === 'percentage' ? 'percentage' : 'amount'}"
+        placeholder="${splitType === 'percentage' ? '0 - 100' : '0.00'}"
+        min="0"
+        step="0.01"
+        oninput="updateSplitPreview()"
+      />
+      <span style="font-size:13px; color:var(--text-muted);">${splitType === 'percentage' ? '%' : '₹'}</span>
+    </div>
+  `).join('');
   updateSplitPreview();
 }
 
 function updateSplitPreview() {
   const amount = parseFloat(document.getElementById('expense-amount-input').value) || 0;
-  const checked = document.querySelectorAll('#expense-split-select input:checked');
+  const checked = [...document.querySelectorAll('#expense-split-select input:checked')];
+  const splitType = document.getElementById('expense-splittype-select').value;
   const preview = document.getElementById('split-preview');
 
-  if (amount > 0 && checked.length > 0) {
-    const share = (amount / checked.length).toFixed(2);
+  if (splitType === 'equal') {
+    if (amount > 0 && checked.length > 0) {
+      const share = (amount / checked.length).toFixed(2);
+      preview.style.display = 'block';
+      preview.innerHTML = `₹${amount.toFixed(2)} ÷ ${checked.length} people = <strong>₹${share} each</strong>`;
+    } else {
+      preview.style.display = 'none';
+    }
+    return;
+  }
+
+  const customInputs = [...document.querySelectorAll('.custom-split-input')];
+  if (amount > 0 && customInputs.length > 0) {
+    const total = customInputs.reduce((sum, i) => sum + (parseFloat(i.value) || 0), 0);
+    const label = splitType === 'percentage' ? `${total.toFixed(2)}% of 100%` : `₹${total.toFixed(2)} of ₹${amount.toFixed(2)}`;
     preview.style.display = 'block';
-    preview.innerHTML = `₹${amount.toFixed(2)} ÷ ${checked.length} people = <strong>₹${share} each</strong>`;
+    preview.innerHTML = `Custom split entered: <strong>${label}</strong>`;
   } else {
     preview.style.display = 'none';
   }
 }
 
 async function addExpense() {
-  console.log('addExpense called, currentGroupId:', currentGroupId);
   const description = document.getElementById('expense-desc-input').value.trim();
   const amount = parseFloat(document.getElementById('expense-amount-input').value);
   const paidBy = parseInt(document.getElementById('expense-paidby-select').value);
+  const category = document.getElementById('expense-category-select').value;
+  const notes = document.getElementById('expense-notes-input').value.trim();
+  const splitType = document.getElementById('expense-splittype-select').value;
   const splitAmong = [...document.querySelectorAll('#expense-split-select input:checked')].map(cb => parseInt(cb.value));
-
-  console.log('Form data:', { description, amount, paidBy, splitAmong });
+  const customSplits = [...document.querySelectorAll('.custom-split-input')]
+    .map((input) => ({
+      userId: Number(input.dataset.userId),
+      [input.dataset.kind]: Number(input.value)
+    }))
+    .filter((s) => Number.isFinite(s.amount || s.percentage) && (s.amount || s.percentage) > 0);
 
   if (!description) return showToast('Please enter a description', 'error');
   if (!amount || amount <= 0) return showToast('Please enter a valid amount', 'error');
   if (!paidBy) return showToast('Please select who paid', 'error');
-  if (splitAmong.length === 0) return showToast('Select at least one person to split with', 'error');
+  if (splitType === 'equal' && splitAmong.length === 0) return showToast('Select at least one person to split with', 'error');
+  if (splitType !== 'equal' && customSplits.length === 0) return showToast('Enter custom split values', 'error');
 
   try {
-    console.log('Making API call to:', `/groups/${currentGroupId}/expenses`);
     const expense = await apiFetch(`/groups/${currentGroupId}/expenses`, {
       method: 'POST',
-      body: JSON.stringify({ description, amount, paidBy, splitAmong })
+      body: JSON.stringify({
+        description,
+        amount,
+        paidBy,
+        splitAmong,
+        category,
+        notes,
+        splitType,
+        customSplits
+      })
     });
     closeModal('modal-add-expense');
     showToast(`${expense.paid_by_name} added "${expense.description}" successfully!`);
@@ -1116,6 +1363,54 @@ async function addExpense() {
     console.error('Add expense error:', err);
     showToast(err.message, 'error');
   }
+}
+
+async function loadMessages(groupId) {
+  const container = document.getElementById('chat-list');
+  container.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Loading chat...</div>';
+  try {
+    const messages = await apiFetch(`/groups/${groupId}/messages`);
+    if (!messages.length) {
+      container.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">No messages yet.</div>';
+      return;
+    }
+    container.innerHTML = messages.map((m) => `
+      <div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed var(--border);">
+        <div style="font-size:12px; color:var(--text-muted);"><strong>${escHtml(m.user_name)}</strong> · ${new Date(m.created_at).toLocaleString('en-IN')}</div>
+        <div style="font-size:14px;">${escHtml(m.message)}</div>
+      </div>
+    `).join('');
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    container.innerHTML = `<div style="color:var(--danger); font-size:13px;">${escHtml(err.message)}</div>`;
+  }
+}
+
+async function sendGroupMessage() {
+  const userId = Number(document.getElementById('chat-sender-select').value);
+  const input = document.getElementById('chat-message-input');
+  const message = input.value.trim();
+  if (!userId) return showToast('Select sender', 'error');
+  if (!message) return showToast('Type a message', 'error');
+
+  try {
+    await apiFetch(`/groups/${currentGroupId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, message })
+    });
+    input.value = '';
+    loadMessages(currentGroupId);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function downloadExcelReport() {
+  window.open(`${API}/groups/${currentGroupId}/export/excel`, '_blank');
+}
+
+function openPdfReport() {
+  window.open(`${API}/groups/${currentGroupId}/export/pdf`, '_blank');
 }
 
 // ══════════════════════════════════════════════════════

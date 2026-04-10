@@ -90,12 +90,14 @@ wrappedDb.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
+    created_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS group_members (
     group_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
+    is_admin INTEGER DEFAULT 0,
     PRIMARY KEY (group_id, user_id),
     FOREIGN KEY (group_id) REFERENCES groups(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -107,6 +109,9 @@ wrappedDb.exec(`
     description TEXT NOT NULL,
     amount REAL NOT NULL,
     paid_by INTEGER NOT NULL,
+    category TEXT DEFAULT 'other',
+    notes TEXT,
+    split_type TEXT DEFAULT 'equal',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES groups(id),
     FOREIGN KEY (paid_by) REFERENCES users(id)
@@ -120,6 +125,41 @@ wrappedDb.exec(`
     FOREIGN KEY (expense_id) REFERENCES expenses(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS group_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES groups(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
+
+function hasColumn(tableName, columnName) {
+  const cols = wrappedDb.prepare(`PRAGMA table_info(${tableName})`).all();
+  return cols.some((c) => c.name === columnName);
+}
+
+function runMigrations() {
+  if (!hasColumn('groups', 'created_by')) {
+    wrappedDb.exec('ALTER TABLE groups ADD COLUMN created_by INTEGER');
+  }
+  if (!hasColumn('group_members', 'is_admin')) {
+    wrappedDb.exec('ALTER TABLE group_members ADD COLUMN is_admin INTEGER DEFAULT 0');
+  }
+  if (!hasColumn('expenses', 'category')) {
+    wrappedDb.exec("ALTER TABLE expenses ADD COLUMN category TEXT DEFAULT 'other'");
+  }
+  if (!hasColumn('expenses', 'notes')) {
+    wrappedDb.exec('ALTER TABLE expenses ADD COLUMN notes TEXT');
+  }
+  if (!hasColumn('expenses', 'split_type')) {
+    wrappedDb.exec("ALTER TABLE expenses ADD COLUMN split_type TEXT DEFAULT 'equal'");
+  }
+}
+
+runMigrations();
 
 export default wrappedDb;
