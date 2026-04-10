@@ -34,15 +34,20 @@ function resolveFrontendPaths() {
   return uniquePaths;
 }
 
-const frontendPaths = resolveFrontendPaths();
+// Set SERVE_FRONTEND=false on the host to deploy API-only (no static UI)
+const serveFrontend = process.env.SERVE_FRONTEND !== 'false';
+const frontendPaths = serveFrontend ? resolveFrontendPaths() : [];
 const frontendPath = frontendPaths[0];
 
 // Log paths for debugging deployment issues
 console.log(`📁 Current working directory: ${process.cwd()}`);
 console.log(`📁 __dirname (backend): ${__dirname}`);
 console.log(`📁 projectRoot: ${projectRoot}`);
-console.log(`📁 Frontend static files: ${frontendPath}`);
-console.log(`📁 Frontend path candidates: ${frontendPaths.join(', ')}`);
+console.log(`📁 Serve frontend (static): ${serveFrontend}`);
+if (serveFrontend) {
+  console.log(`📁 Frontend static files: ${frontendPath}`);
+  console.log(`📁 Frontend path candidates: ${frontendPaths.join(', ')}`);
+}
 console.log(`📁 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 
 const app = express();
@@ -57,9 +62,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Serve static frontend files from every valid candidate directory
-for (const staticPath of frontendPaths) {
-  app.use(express.static(staticPath));
+// Serve static frontend only when not in API-only mode
+if (serveFrontend) {
+  for (const staticPath of frontendPaths) {
+    app.use(express.static(staticPath));
+  }
 }
 
 
@@ -110,13 +117,10 @@ app.get('/api/groups', (req, res) => {
   try {
     const groups = db.prepare(`
       SELECT g.*,
-        COUNT(DISTINCT gm.user_id) AS member_count,
-        COUNT(DISTINCT e.id) AS expense_count,
-        COALESCE(SUM(e.amount), 0) AS total_amount
+        (SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id) AS member_count,
+        (SELECT COUNT(*) FROM expenses e WHERE e.group_id = g.id) AS expense_count,
+        (SELECT COALESCE(SUM(e.amount), 0) FROM expenses e WHERE e.group_id = g.id) AS total_amount
       FROM groups g
-      LEFT JOIN group_members gm ON g.id = gm.group_id
-      LEFT JOIN expenses e ON g.id = e.group_id
-      GROUP BY g.id
       ORDER BY g.created_at DESC
     `).all();
     res.json(groups);
@@ -369,8 +373,12 @@ app.get('/api/groups/:id/balances', (req, res) => {
 });
 
 
-// ─── Catch-all: serve frontend for any unmatched route ─────────
-app.get('*', (req, res, next) => {
+// ─── Catch-all: SPA in full mode; 404 JSON in API-only mode ────
+app.get('*', (req, res) => {
+  if (!serveFrontend) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
   const indexPath = frontendPaths
     .map((p) => path.join(p, 'index.html'))
     .find((candidate) => fs.existsSync(candidate));
@@ -385,12 +393,12 @@ app.get('*', (req, res, next) => {
   }
 
   console.log(`🔍 Serving index.html from: ${indexPath}`);
-  
+
   res.sendFile(indexPath, (err) => {
     if (err) {
       console.error(`❌ Error serving frontend: ${err.message}`);
       console.error(`   Attempted path: ${indexPath}`);
-      res.status(404).json({ 
+      res.status(404).json({
         error: 'Frontend files not found',
         attemptedPath: indexPath,
         workingDir: process.cwd()

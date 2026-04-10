@@ -704,16 +704,6 @@ let allUsers = [];
 document.addEventListener('DOMContentLoaded', () => {
   loadGroups();
   loadUsers();
-  
-  // Add event listeners for delete buttons
-  document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('delete-group-btn')) {
-      e.stopPropagation();
-      const groupId = e.target.dataset.groupId;
-      const groupName = e.target.dataset.groupName;
-      deleteGroup(groupId, groupName);
-    }
-  });
 });
 
 // ══════════════════════════════════════════════════════
@@ -859,12 +849,9 @@ async function loadGroups() {
 function renderGroupCard(group) {
   return `
     <div class="card card-hover group-card" onclick="openGroup(${group.id})">
-      <div style="display:flex; justify-content:space-between; align-items:start;">
-        <div style="flex:1;">
-          <div class="group-name">${escHtml(group.name)}</div>
-          <div class="group-meta">${escHtml(group.description || 'No description')}</div>
-        </div>
-        <button class="btn btn-danger-sm delete-group-btn" data-group-id="${group.id}" data-group-name="${group.name.replace(/"/g, '&quot;')}" title="Delete group" style="margin-left:8px;">✕</button>
+      <div>
+        <div class="group-name">${escHtml(group.name)}</div>
+        <div class="group-meta">${escHtml(group.description || 'No description')}</div>
       </div>
       <div class="group-stats">
         <div class="stat">
@@ -881,18 +868,6 @@ function renderGroupCard(group) {
         </div>
       </div>
     </div>`;
-}
-
-async function deleteGroup(groupId, groupName) {
-  if (!confirm(`Delete group "${groupName}"? This will remove all expenses in this group.`)) return;
-  
-  try {
-    await apiFetch(`/groups/${groupId}`, { method: 'DELETE' });
-    showToast(`Group "${groupName}" deleted!`);
-    loadGroups();
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
 }
 
 // Open modal and populate member checkboxes
@@ -1034,7 +1009,6 @@ function renderExpenseItem(expense) {
         <div class="expense-amount">₹${Number(expense.amount).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         <div class="expense-split">₹${Number(perPersonAmt).toFixed(2)}/person × ${splitCount}</div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="deleteExpense(${expense.id})" title="Delete" style="color:var(--text-muted); padding: 6px 8px;">✕</button>
     </div>`;
 }
 
@@ -1090,27 +1064,16 @@ async function addExpense() {
 
   try {
     console.log('Making API call to:', `/groups/${currentGroupId}/expenses`);
-    await apiFetch(`/groups/${currentGroupId}/expenses`, {
+    const expense = await apiFetch(`/groups/${currentGroupId}/expenses`, {
       method: 'POST',
       body: JSON.stringify({ description, amount, paidBy, splitAmong })
     });
     closeModal('modal-add-expense');
-    showToast('Expense added!');
+    showToast(`${expense.paid_by_name} added "${expense.description}" successfully!`);
     loadExpenses(currentGroupId);
     loadGroups(); // Refresh total in group card
   } catch (err) {
     console.error('Add expense error:', err);
-    showToast(err.message, 'error');
-  }
-}
-
-async function deleteExpense(expenseId) {
-  if (!confirm('Delete this expense?')) return;
-  try {
-    await apiFetch(`/expenses/${expenseId}`, { method: 'DELETE' });
-    showToast('Expense deleted');
-    loadExpenses(currentGroupId);
-  } catch (err) {
     showToast(err.message, 'error');
   }
 }
