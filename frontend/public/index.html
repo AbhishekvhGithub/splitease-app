@@ -557,6 +557,19 @@
         </button>
       </div>
 
+      <div id="group-spend-summary" class="card" style="padding: 14px 16px; margin-top: 14px;">
+        <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:12px; color:var(--text-muted);">Total expense (all members)</div>
+            <div id="group-total-spent" style="font-size:18px; font-weight:800; margin-top:2px;">₹0</div>
+          </div>
+          <div style="flex:1; min-width: 220px;">
+            <div style="font-size:12px; color:var(--text-muted);">Who spent</div>
+            <div id="group-who-spent" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('expenses')">Expenses</button>
@@ -959,6 +972,7 @@ async function loadExpenses(groupId) {
 
   try {
     const expenses = await apiFetch(`/groups/${groupId}/expenses`);
+    renderSpendSummary(expenses);
 
     if (expenses.length === 0) {
       container.innerHTML = `
@@ -976,6 +990,32 @@ async function loadExpenses(groupId) {
   } catch (err) {
     container.innerHTML = `<p style="color:var(--danger)">Failed to load expenses.</p>`;
   }
+}
+
+function renderSpendSummary(expenses) {
+  const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  document.getElementById('group-total-spent').textContent =
+    `₹${Number(total).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+
+  const byPayer = new Map();
+  for (const e of expenses) {
+    const name = e.paid_by_name || 'Unknown';
+    byPayer.set(name, (byPayer.get(name) || 0) + (Number(e.amount) || 0));
+  }
+
+  const entries = [...byPayer.entries()].sort((a, b) => b[1] - a[1]);
+  const container = document.getElementById('group-who-spent');
+  if (entries.length === 0) {
+    container.innerHTML = `<span style="color:var(--text-muted); font-size:13px;">No expenses yet</span>`;
+    return;
+  }
+
+  container.innerHTML = entries.map(([name, amt]) => `
+    <span class="pill" style="display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border);">
+      <span class="avatar" style="width:22px;height:22px;font-size:10px;">${getInitials(name)}</span>
+      <span style="font-size:13px;"><strong>${escHtml(name)}</strong> · ₹${Number(amt).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+    </span>
+  `).join('');
 }
 
 // Pick an emoji based on description keyword
