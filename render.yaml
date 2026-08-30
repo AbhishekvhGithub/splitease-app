@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: splitease-app
+    root: .
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_FRONTEND
+        value: "false"

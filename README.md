@@ -2,6 +2,11 @@
 
 A full-stack expense splitting application like Splitwise, built with Node.js, Express, SQLite, and vanilla JavaScript.
 
+## 🌐 Live Deployments
+
+- **Frontend**: [splitease-app-one.vercel.app](https://splitease-app-one.vercel.app)
+- **Backend API**: [splitease-app-rkgp.onrender.com](https://splitease-app-rkgp.onrender.com)
+
 ---
 
 ## 📁 Folder Structure
@@ -52,6 +57,51 @@ http://localhost:3001
 ```
 
 That's it! The backend serves the frontend automatically.
+
+---
+
+## 🚀 Deployment
+
+### Railway (Recommended - Free & Easy)
+
+1. **Connect to Railway**:
+   - Go to [Railway.app](https://railway.app)
+   - Sign up/login with GitHub
+   - Click "New Project" → "Deploy from GitHub repo"
+
+2. **Deploy**:
+   - Railway auto-detects Node.js
+   - Uses `npm start` from root package.json
+   - Database persists automatically
+
+3. **Access your app**:
+   - Railway provides a `*.up.railway.app` URL
+   - Your app is live!
+
+### Docker
+
+1. **Build the image**:
+   ```bash
+   docker build -t splitease .
+   ```
+
+2. **Run the container**:
+   ```bash
+   docker run -p 3001:3001 splitease
+   ```
+
+3. **Access**:
+   - Open http://localhost:3001
+
+### Other Platforms
+
+Works with any Node.js hosting:
+- **Render**: Connect GitHub repo, set build command to `npm install`, start to `npm start`
+- **Heroku**: Push to Heroku git, auto-detects Node.js
+- **Vercel**: For frontend only (backend needs serverless functions)
+- **AWS/GCP/Azure**: Deploy container or Node.js app
+
+The app uses `process.env.PORT` so it works on any hosting platform.
 
 ---
 

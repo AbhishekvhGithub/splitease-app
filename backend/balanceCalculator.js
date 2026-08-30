@@ -13,7 +13,7 @@
  * @param {Array} expenses - Array of expense rows with splits
  * @returns {Object} { netBalances, transactions }
  */
-function calculateBalances(expenses) {
+export function calculateBalances(expenses) {
   // Step 1: Build a net balance map { userId: netAmount }
   const balanceMap = {};
 
@@ -73,5 +73,3 @@ function calculateBalances(expenses) {
     transactions
   };
 }
-
-module.exports = { calculateBalances };
