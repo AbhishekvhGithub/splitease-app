@@ -1,0 +1,10 @@
+{
+  "name": "splitease",
+  "version": "1.0.0",
+  "description": "A Splitwise-like expense splitting app",
+  "scripts": {
+    "install-deps": "cd backend && npm install",
+    "start": "cd backend && npm start",
+    "dev": "cd backend && npm run dev"
+  }
+}
